@@ -1,0 +1,16 @@
+{
+  "name": "LoLlevaTom",
+  "short_name": "LoLlevaTom",
+  "description": "Tom te lo lleva a México: elige qué quieres",
+  "start_url": "/LoLlevaTom/index.html",
+  "scope": "/LoLlevaTom/",
+  "display": "standalone",
+  "background_color": "#FFF6EE",
+  "theme_color": "#E4007C",
+  "orientation": "portrait",
+  "lang": "es",
+  "icons": [
+    { "src": "icon.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
