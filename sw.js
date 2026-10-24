@@ -1,4 +1,4 @@
-const CACHE = 'lollevatom-v1';
+const CACHE = 'lollevatom-v2';
 const ASSETS = ['./index.html', './manifest.json', './icon.png', './icon-maskable.png'];
 
 self.addEventListener('install', e => {

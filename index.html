@@ -277,6 +277,7 @@
       <p class="tip">💡 Pas besoin de nom : vide = numéro auto (« Playera 1 », « Bolsa 2 »…). Si tu en mets un, en espagnol.</p>
     </div>
     <button class="btn dark" id="ad-submit" style="width:100%" onclick="submitPending()" disabled>Ajouter</button>
+    <p class="tip" id="ad-status" style="text-align:center"></p>
   </div>
 
   <div id="ad-items" style="display:none">
@@ -445,6 +446,7 @@
       c.style.zIndex = 10 - i;
       c.dataset.depth = i;
     });
+    q.slice(3, 6).forEach(it => loadPhoto(it.id));
   }
 
   function makeCard(it) {
@@ -466,12 +468,14 @@
 
   function setStamps(c, dx) {
     const v = Math.min(Math.abs(dx) / 100, 1);
-    c.querySelector('.stamp.quiero').style.opacity = dx > 0 ? v : 0;
-    c.querySelector('.stamp.tarde').style.opacity = dx < 0 ? v : 0;
+    c._sq = c._sq || c.querySelector('.stamp.quiero');
+    c._st = c._st || c.querySelector('.stamp.tarde');
+    c._sq.style.opacity = dx > 0 ? v : 0;
+    c._st.style.opacity = dx < 0 ? v : 0;
   }
 
   function attachDrag(c) {
-    let sx = 0, sy = 0, dx = 0, dy = 0, t0 = 0, on = false;
+    let sx = 0, sy = 0, dx = 0, dy = 0, t0 = 0, on = false, raf = 0;
     c.addEventListener('pointerdown', e => {
       if (c.dataset.depth !== '0' || c.classList.contains('gone')) return;
       on = true; S.dragging = true; sx = e.clientX; sy = e.clientY; dx = dy = 0; t0 = Date.now();
@@ -481,8 +485,13 @@
     c.addEventListener('pointermove', e => {
       if (!on) return;
       dx = e.clientX - sx; dy = e.clientY - sy;
-      c.style.transform = `translate(${dx}px, ${dy * .4}px) rotate(${dx / 16}deg)`;
-      setStamps(c, dx);
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (!on) return;
+        c.style.transform = `translate(${dx}px, ${dy * .4}px) rotate(${dx / 16}deg)`;
+        setStamps(c, dx);
+      });
     });
     const end = () => {
       if (!on) return;
@@ -649,75 +658,111 @@
     const key = S.pending.map(p => p.key).join(',');
     if (box.dataset.key !== key) {
       box.dataset.key = key;
-      box.innerHTML = S.pending.map(p => `<div class="pend" data-k="${p.key}"><img src="${p.preview}" alt="">
+      box.innerHTML = S.pending.map(p => `<div class="pend" data-k="${p.key}"><img src="${p.thumb || ''}" alt="">
         <input placeholder="Nom (facultatif)" value="${esc(p.nom)}" oninput="pendName(${p.key}, this.value)">
         <button class="x" onclick="pendRemove(${p.key})">✕</button></div>`).join('');
     }
     const n = S.pending.length;
-    $('ad-submit').disabled = !n || S.uploading;
-    $('ad-submit').textContent = S.uploading || (n ? `Ajouter ${n} objet${n > 1 ? 's' : ''} dans ${CAT[S.adCat].emoji} ${CAT[S.adCat].label}` : 'Ajouter');
+    const ready = S.pending.filter(p => p.thumb).length;
+    const btn = $('ad-submit');
+    btn.disabled = !n || ready < n;
+    btn.textContent = !n ? 'Ajouter'
+      : ready < n ? `Préparation des photos ${ready}/${n}…`
+      : `Ajouter ${n} objet${n > 1 ? 's' : ''} dans ${CAT[S.adCat].emoji} ${CAT[S.adCat].label}`;
+    const up = S.upload;
+    $('ad-status').textContent = !up ? ''
+      : up.done < up.total ? `☁️ Envoi en cours : ${up.done}/${up.total}… (tu peux continuer à ajouter)`
+      : `✅ ${up.total} objet${up.total > 1 ? 's' : ''} envoyé${up.total > 1 ? 's' : ''}`;
   }
   let pendSeq = 0;
   function addFiles(input) {
-    [...input.files].forEach(f => S.pending.push({ key: ++pendSeq, file: f, nom: '', preview: URL.createObjectURL(f) }));
+    [...input.files].forEach(f => S.pending.push({ key: ++pendSeq, file: f, nom: '', thumb: null, photo: null }));
     input.value = '';
     renderPending();
-    const last = $('ad-pending').querySelector('.pend:last-child input');
-    if (last && S.pending.length === 1) last.focus();
+    processPending();
   }
   function pendName(k, v) { const p = S.pending.find(p => p.key === k); if (p) p.nom = v; }
   function pendRemove(k) {
-    const p = S.pending.find(p => p.key === k);
-    if (p) URL.revokeObjectURL(p.preview);
     S.pending = S.pending.filter(p => p.key !== k);
     renderPending();
   }
 
-  function compressImage(file, maxPx, quality) {
+  // Les photos sont préparées une par une dès la sélection : une seule photo pleine
+  // résolution en mémoire à la fois (sinon 100 photos de 12 Mpx font planter Safari).
+  let processing = false;
+  async function processPending() {
+    if (processing) return;
+    processing = true;
+    let p;
+    while ((p = S.pending.find(x => x.file && !x.thumb))) {
+      try {
+        Object.assign(p, await prepareImage(p.file));
+        p.file = null;
+        const img = $('ad-pending').querySelector(`[data-k="${p.key}"] img`);
+        if (img) img.src = p.thumb;
+      } catch (e) {
+        toast('❌ ' + (e.message || e));
+        S.pending = S.pending.filter(x => x !== p);
+      }
+      renderPending();
+    }
+    processing = false;
+  }
+
+  async function decodeImage(file) {
+    if (window.createImageBitmap) {
+      try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) {}
+    }
     return new Promise((resolve, reject) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        let w = img.naturalWidth, h = img.naturalHeight;
-        const r = Math.min(1, maxPx / Math.max(w, h));
-        w = Math.round(w * r); h = Math.round(h * r);
-        const cv = document.createElement('canvas');
-        cv.width = w; cv.height = h;
-        const ctx = cv.getContext('2d');
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(cv.toDataURL('image/jpeg', quality));
-      };
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image illisible')); };
       img.src = url;
     });
   }
+  function drawScaled(src, w, h, maxPx) {
+    const r = Math.min(1, maxPx / Math.max(w, h));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(w * r); cv.height = Math.round(h * r);
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, 0, 0, cv.width, cv.height);
+    return cv;
+  }
+  async function prepareImage(file) {
+    const im = await decodeImage(file);
+    const big = drawScaled(im, im.width || im.naturalWidth, im.height || im.naturalHeight, 1200);
+    if (im.close) im.close();
+    const photo = big.toDataURL('image/jpeg', .72);
+    const small = drawScaled(big, big.width, big.height, 360); // vignette tirée de la 1200 px : plus rapide et plus net
+    const thumb = small.toDataURL('image/jpeg', .62);
+    big.width = big.height = small.width = small.height = 0; // libère la mémoire tout de suite (iOS)
+    return { photo, thumb };
+  }
 
-  async function submitPending() {
-    if (!S.pending.length || S.uploading) return;
+  function submitPending() {
+    const todo = S.pending.filter(p => p.thumb);
+    if (!todo.length) return;
     const cat = S.adCat;
     // numéro suivant : on repart du plus grand « Playera N » existant (pas de doublon après une suppression)
     const re = new RegExp('^' + CAT[cat].one + ' (\\d+)$');
     let n = Math.max(0, ...inCat(cat).map(i => +(re.exec(i.nom) || [])[1] || 0));
-    const todo = [...S.pending];
-    let ok = 0;
-    for (let k = 0; k < todo.length; k++) {
-      const p = todo[k];
-      S.uploading = `Envoi ${k + 1}/${todo.length}…`;
-      renderPending();
-      try {
-        const [photo, thumb] = await Promise.all([compressImage(p.file, 1200, .72), compressImage(p.file, 360, .6)]);
-        const nom = p.nom.trim() || `${CAT[cat].one} ${++n}`;
-        await B.addItem({ cat, nom, thumb, statut: '', valise: false, createdAt: Date.now() }, photo);
-        URL.revokeObjectURL(p.preview);
-        S.pending = S.pending.filter(x => x !== p);
-        ok++;
-      } catch (e) { toast('❌ ' + (e.message || e)); }
-    }
-    S.uploading = null;
+    const now = Date.now();
+    if (!S.upload || S.upload.done >= S.upload.total) S.upload = { done: 0, total: 0 };
+    const up = S.upload;
+    todo.forEach((p, k) => {
+      const nom = p.nom.trim() || `${CAT[cat].one} ${++n}`;
+      up.total++;
+      // pas d'await : Firestore affiche l'objet tout de suite et envoie en arrière-plan
+      B.addItem({ cat, nom, thumb: p.thumb, statut: '', valise: false, createdAt: now + k }, p.photo)
+        .then(() => { up.done++; renderPending(); })
+        .catch(e => { up.total--; toast('❌ ' + nom + ' : ' + (e.message || e)); renderPending(); });
+    });
+    S.pending = S.pending.filter(p => !todo.includes(p));
     renderPending();
-    if (ok) toast(`✅ ${ok} objet${ok > 1 ? 's' : ''} ajouté${ok > 1 ? 's' : ''}`);
+    toast(`✅ ${todo.length} objet${todo.length > 1 ? 's' : ''} ajouté${todo.length > 1 ? 's' : ''}`);
   }
 
   function renderItems() {
@@ -834,13 +879,14 @@
   // ============================================================
 
   const CONFIGURED = !Object.values(firebaseConfig).some(v => String(v).includes('REMPLACE_MOI'));
+  const FORCE_DEMO = /[?&]demo\b/.test(location.search); // ?demo : tester sans toucher la vraie base
 
-  if (!CONFIGURED) {
+  if (!CONFIGURED || FORCE_DEMO) {
     boot(demoBackend(), true);
   } else {
     const { initializeApp } = await import('https://cdn.jsdelivr.net/npm/firebase@10.12.0/app/+esm');
     const {
-      initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc
+      initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, writeBatch, updateDoc, deleteDoc, getDoc
     } = await import('https://cdn.jsdelivr.net/npm/firebase@10.12.0/firestore/+esm');
 
     const app = initializeApp(firebaseConfig);
@@ -854,11 +900,12 @@
       onItems(cb, err) {
         return onSnapshot(collection(db, 'items'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), err);
       },
-      async addItem(data, photo) {
+      addItem(data, photo) {
         const ref = doc(collection(db, 'items'));
-        await setDoc(doc(db, 'photos', ref.id), { data: photo });
-        await setDoc(ref, data);
-        return ref.id;
+        const b = writeBatch(db);
+        b.set(doc(db, 'photos', ref.id), { data: photo });
+        b.set(ref, data);
+        return b.commit().then(() => ref.id);
       },
       update(id, patch) { return updateDoc(doc(db, 'items', id), patch); },
       async remove(id) {
