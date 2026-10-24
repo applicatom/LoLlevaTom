@@ -195,6 +195,13 @@
   .grp { font-family: 'Fredoka'; font-weight: 600; margin: 14px 2px 4px; font-size: 16px; }
   .progress { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; margin: 10px 0 4px; }
   .progress i { display: block; height: 100%; background: var(--quiero); }
+  .fld { display: block; font-weight: 800; font-size: 14px; margin: 0 2px 12px; }
+  .fld small { color: var(--muted); font-weight: 700; }
+  .fld input { display: block; width: 100%; margin-top: 6px; border: 2px solid var(--line); border-radius: 12px; padding: 11px 12px; background: var(--surface); outline: none; }
+  .fld input:focus { border-color: var(--rosa); }
+  .cat-list .row { gap: 6px; }
+  .cat-list .mini { width: 34px; height: 34px; }
+  .chip.add { background: var(--rosa-soft); color: var(--rosa); box-shadow: none; }
   .link { color: var(--muted); font-weight: 800; text-decoration: underline; padding: 14px; display: block; margin: 8px auto 0; }
 </style>
 </head>
@@ -302,7 +309,8 @@
 
 <!-- ================= APP ================= -->
 <script>
-  const CATS = [
+  // Catégories par défaut ; la liste réelle vit dans Firestore config/categories (modifiable en mode Tom)
+  const DEFAULT_CATS = [
     { id: 'tops',       label: 'Tops',          emoji: '👚', one: 'Playera' },
     { id: 'pantalones', label: 'Pantalones',    emoji: '👖', one: 'Pantalón' },
     { id: 'vestidos',   label: 'Vestidos',      emoji: '👗', one: 'Vestido' },
@@ -316,7 +324,12 @@
     { id: 'objetos',    label: 'Objetos',       emoji: '🧸', one: 'Objeto' },
     { id: 'otros',      label: 'Otros',         emoji: '📦', one: 'Cosa' },
   ];
-  const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+  let CATS = [], CAT = {};
+  function setCats(list) {
+    CATS = (list && list.length ? list : DEFAULT_CATS).map(c => ({ ...c }));
+    CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+  }
+  setCats(null);
   const LABEL = { quiero: '¡Lo quiero!', tarde: 'Más tarde', '': 'Por decidir' };
 
   const $ = id => document.getElementById(id);
@@ -379,7 +392,7 @@
       else if (!todo) { meta = `${its.length} ${its.length > 1 ? 'cosas' : 'cosa'} · ¡Listo!`; badge = '<span class="badge">✓</span>'; }
       else { meta = `${todo} por decidir`; badge = `<span class="badge">${todo}</span>`; }
       return `<button class="cat ${!its.length ? 'empty' : ''} ${its.length && !todo ? 'done' : ''}" onclick="openCat('${cat.id}')">
-        ${badge}<span class="emo">${cat.emoji}</span><span class="name">${cat.label}</span>
+        ${badge}<span class="emo">${cat.emoji}</span><span class="name">${esc(cat.label)}</span>
         <span class="meta">${meta}</span><span class="bar"><i style="width:${pct}%"></i></span></button>`;
     }).join('');
     $('admin-fab').style.display = S.admin ? '' : 'none';
@@ -410,7 +423,8 @@
 
   function renderSwipe() {
     const cat = CAT[S.cat];
-    $('sw-title').textContent = `${cat.emoji} ${cat.label}`;
+    if (!cat) return showPage('home');
+    $('sw-title').textContent = `${cat.emoji} ${esc(cat.label)}`;
     const all = inCat(S.cat);
     const q = queue();
     $('sw-count').textContent = all.length ? `${all.length - q.length}/${all.length}` : '';
@@ -571,7 +585,7 @@
     const cats = CATS.filter(c => decided.some(i => i.cat === c.id));
     if (S.chCat !== 'all' && !cats.find(c => c.id === S.chCat) && !inCat(S.chCat).length) S.chCat = 'all';
     $('ch-chips').innerHTML = [`<button class="chip ${S.chCat === 'all' ? 'on' : ''}" onclick="S.chCat='all';renderChoices()">Todas</button>`]
-      .concat(cats.map(c => `<button class="chip ${S.chCat === c.id ? 'on' : ''}" onclick="S.chCat='${c.id}';renderChoices()">${c.emoji} ${c.label}</button>`)).join('');
+      .concat(cats.map(c => `<button class="chip ${S.chCat === c.id ? 'on' : ''}" onclick="S.chCat='${c.id}';renderChoices()">${c.emoji} ${esc(c.label)}</button>`)).join('');
     const pool = S.chCat === 'all' ? decided : decided.filter(i => i.cat === S.chCat);
     const nQ = pool.filter(i => i.statut === 'quiero').length, nT = pool.length - nQ;
     $('ch-seg').innerHTML = `<button class="q ${S.chTab === 'quiero' ? 'on' : ''}" onclick="S.chTab='quiero';renderChoices()">💚 Lo quiero (${nQ})</button>
@@ -649,7 +663,9 @@
   }
 
   function renderAdd() {
-    $('ad-cat-chips').innerHTML = CATS.map(c => `<button class="chip ${S.adCat === c.id ? 'on' : ''}" onclick="S.adCat='${c.id}';renderAdd()">${c.emoji} ${c.label}</button>`).join('');
+    if (!CAT[S.adCat]) S.adCat = CATS[0].id;
+    $('ad-cat-chips').innerHTML = CATS.map(c => `<button class="chip ${S.adCat === c.id ? 'on' : ''}" onclick="S.adCat='${c.id}';renderAdd()">${c.emoji} ${esc(c.label)}</button>`).join('')
+      + `<button class="chip add" onclick="editCat()">＋ Nouvelle</button><button class="chip add" onclick="manageCats()">✏️ Gérer</button>`;
     renderPending();
   }
   function renderPending() {
@@ -668,7 +684,7 @@
     btn.disabled = !n || ready < n;
     btn.textContent = !n ? 'Ajouter'
       : ready < n ? `Préparation des photos ${ready}/${n}…`
-      : `Ajouter ${n} objet${n > 1 ? 's' : ''} dans ${CAT[S.adCat].emoji} ${CAT[S.adCat].label}`;
+      : `Ajouter ${n} objet${n > 1 ? 's' : ''} dans ${CAT[S.adCat].emoji} ${esc(CAT[S.adCat].label)}`;
     const up = S.upload;
     $('ad-status').textContent = !up ? ''
       : up.done < up.total ? `☁️ Envoi en cours : ${up.done}/${up.total}… (tu peux continuer à ajouter)`
@@ -765,10 +781,86 @@
     toast(`✅ ${todo.length} objet${todo.length > 1 ? 's' : ''} ajouté${todo.length > 1 ? 's' : ''}`);
   }
 
+  // ---------- catégories ----------
+  const EMOJI_PICKS = ['💎', '📿', '⌚', '🕶️', '🧣', '🧢', '🧤', '🎒', '📚', '🎁', '🧴', '🪮', '🖼️', '🎧', '🍳', '🏷️'];
+  function saveCats(list) {
+    setCats(list);
+    render();
+    B.saveCats(CATS).catch(e => toast('❌ ' + e.message));
+  }
+  function editCat(id) {
+    const c = id ? CAT[id] : null;
+    $('sheet').innerHTML = `<div class="grab"></div>
+      <h3 style="margin-top:0">${c ? 'Modifier la catégorie' : 'Nouvelle catégorie'}</h3>
+      <p class="sub">En espagnol : c'est ce qu'elle verra.</p>
+      <label class="fld">Nom de la catégorie<input id="ce-label" placeholder="ex. Joyería" value="${esc(c?.label || '')}"></label>
+      <label class="fld">Nom d'un objet <small>(pour les noms auto : « Joya 1, Joya 2… »)</small><input id="ce-one" placeholder="ex. Joya" value="${esc(c?.one || '')}"></label>
+      <label class="fld">Emoji<input id="ce-emoji" placeholder="🏷️" value="${esc(c?.emoji || '')}" style="font-size:22px;width:90px"></label>
+      <div class="chips" style="flex-wrap:wrap;margin:-4px 0 14px;padding:0">${EMOJI_PICKS.map(e => `<button class="chip" onclick="$('ce-emoji').value='${e}'">${e}</button>`).join('')}</div>
+      <div class="sheet-actions">
+        <button class="btn ghost" onclick="${c ? 'manageCats()' : 'closeSheet()'}">Annuler</button>
+        <button class="btn dark" onclick="saveCat('${id || ''}')">Enregistrer</button>
+      </div>`;
+    $('overlay').classList.add('show');
+    if (!c) setTimeout(() => $('ce-label').focus(), 50);
+  }
+  function saveCat(id) {
+    const label = $('ce-label').value.trim();
+    if (!label) { $('ce-label').focus(); return toast('Donne un nom à la catégorie'); }
+    const emoji = [...$('ce-emoji').value.trim()].slice(0, 4).join('') || '🏷️';
+    const one = $('ce-one').value.trim() || label;
+    const list = CATS.map(c => ({ ...c }));
+    if (id) {
+      Object.assign(list.find(c => c.id === id), { label, emoji, one });
+      saveCats(list);
+      manageCats();
+    } else {
+      const c = { id: 'c' + Date.now().toString(36), label, emoji, one };
+      const k = list.findIndex(x => x.id === 'otros'); // « Otros » reste en dernier
+      k >= 0 ? list.splice(k, 0, c) : list.push(c);
+      S.adCat = c.id;
+      saveCats(list);
+      closeSheet();
+      toast(`✅ Catégorie ${emoji} ${label} créée`);
+    }
+  }
+  function manageCats() {
+    $('sheet').innerHTML = `<div class="grab"></div><h3 style="margin-top:0">Catégories</h3>
+      <p class="sub">Ordre = ordre d'affichage chez elle.</p>
+      <div class="panel cat-list" style="padding:4px 12px">${CATS.map((c, k) => `<div class="row">
+        <span style="font-size:24px;width:32px;text-align:center">${c.emoji}</span>
+        <div class="tx"><b>${esc(c.label)}</b><small>${inCat(c.id).length} objet${inCat(c.id).length > 1 ? 's' : ''}</small></div>
+        <button class="mini" onclick="moveCat('${c.id}',-1)" ${k ? '' : 'disabled style="opacity:.3"'}>↑</button>
+        <button class="mini" onclick="moveCat('${c.id}',1)" ${k < CATS.length - 1 ? '' : 'disabled style="opacity:.3"'}>↓</button>
+        <button class="mini" onclick="editCat('${c.id}')">✏️</button>
+        <button class="mini" onclick="deleteCat('${c.id}')">🗑️</button></div>`).join('')}</div>
+      <div class="sheet-actions">
+        <button class="btn ghost" onclick="closeSheet()">Fermer</button>
+        <button class="btn dark" onclick="editCat()">＋ Nouvelle</button>
+      </div>`;
+    $('overlay').classList.add('show');
+  }
+  function moveCat(id, d) {
+    const list = CATS.map(c => ({ ...c }));
+    const k = list.findIndex(c => c.id === id), j = k + d;
+    if (j < 0 || j >= list.length) return;
+    [list[k], list[j]] = [list[j], list[k]];
+    saveCats(list);
+    manageCats();
+  }
+  function deleteCat(id) {
+    const c = CAT[id], n = inCat(id).length;
+    if (CATS.length <= 1) return toast('Il faut garder au moins une catégorie');
+    if (n) return toast(`${c.emoji} ${esc(c.label)} contient ${n} objet${n > 1 ? 's' : ''} : déplace-les ou supprime-les d'abord (onglet Objets)`);
+    if (!confirm(`Supprimer la catégorie « ${esc(c.label)} » ?`)) return;
+    saveCats(CATS.filter(x => x.id !== id));
+    manageCats();
+  }
+
   function renderItems() {
     const cats = CATS.filter(c => inCat(c.id).length);
     $('ad-items-chips').innerHTML = [`<button class="chip ${S.adItemsCat === 'all' ? 'on' : ''}" onclick="S.adItemsCat='all';renderItems()">Tout (${S.items.length})</button>`]
-      .concat(cats.map(c => `<button class="chip ${S.adItemsCat === c.id ? 'on' : ''}" onclick="S.adItemsCat='${c.id}';renderItems()">${c.emoji} ${c.label} (${inCat(c.id).length})</button>`)).join('');
+      .concat(cats.map(c => `<button class="chip ${S.adItemsCat === c.id ? 'on' : ''}" onclick="S.adItemsCat='${c.id}';renderItems()">${c.emoji} ${esc(c.label)} (${inCat(c.id).length})</button>`)).join('');
     const list = (S.adItemsCat === 'all' ? S.items : inCat(S.adItemsCat)).slice().sort((a, b) => CATS.indexOf(CAT[a.cat]) - CATS.indexOf(CAT[b.cat]) || byDate(b, a));
     const frSt = { quiero: 'Elle le veut', tarde: 'Plus tard', '': 'Pas trié' };
     $('ad-items-list').innerHTML = list.length ? list.map(i => `<div class="row">
@@ -787,7 +879,7 @@
   function moveItem(id) {
     const it = S.items.find(i => i.id === id);
     $('sheet').innerHTML = `<div class="grab"></div><h3 style="margin-top:0">Déplacer « ${esc(it.nom)} »</h3><p class="sub">Choisis la nouvelle catégorie</p>
-      <div class="chips" style="flex-wrap:wrap;margin:0;padding:0">${CATS.map(c => `<button class="chip ${c.id === it.cat ? 'on' : ''}" onclick="B.update('${id}',{cat:'${c.id}'}).catch(e=>toast('❌ '+e.message));closeSheet()">${c.emoji} ${c.label}</button>`).join('')}</div>
+      <div class="chips" style="flex-wrap:wrap;margin:0;padding:0">${CATS.map(c => `<button class="chip ${c.id === it.cat ? 'on' : ''}" onclick="B.update('${id}',{cat:'${c.id}'}).catch(e=>toast('❌ '+e.message));closeSheet()">${c.emoji} ${esc(c.label)}</button>`).join('')}</div>
       <button class="btn ghost" style="width:100%;margin-top:14px" onclick="closeSheet()">Annuler</button>`;
     $('overlay').classList.add('show');
   }
@@ -806,7 +898,7 @@
       <div class="progress"><i style="width:${q.length ? packed / q.length * 100 : 0}%"></i></div>
       <p class="tip" style="margin-top:8px">⏳ ${tarde} pour plus tard · ❔ ${todo} pas encore trié${todo > 1 ? 's' : ''}</p>`;
     const groups = CATS.map(c => ({ c, its: q.filter(i => i.cat === c.id).sort(byDate) })).filter(g => g.its.length);
-    $('ad-valise-list').innerHTML = groups.length ? groups.map(g => `<div class="grp">${g.c.emoji} ${g.c.label} <span class="pill">${g.its.filter(i => i.valise).length}/${g.its.length}</span></div>` +
+    $('ad-valise-list').innerHTML = groups.length ? groups.map(g => `<div class="grp">${g.c.emoji} ${esc(g.c.label)} <span class="pill">${g.its.filter(i => i.valise).length}/${g.its.length}</span></div>` +
       g.its.map(i => `<div class="row ${i.valise ? 'packed' : ''}" onclick="togglePacked('${i.id}')" style="cursor:pointer">
         <span class="check ${i.valise ? 'on' : ''}">${i.valise ? '✓' : ''}</span>
         <div class="im" style="background-image:url('${i.thumb || ''}')"></div>
@@ -827,6 +919,7 @@
     S.admin = lsGet('llt_admin') === '1';
     $('demo-banner').style.display = demo ? '' : 'none';
     showPage('home');
+    B.onCats(list => { setCats(list); render(); }, e => toast('❌ Connexion : ' + e.message));
     B.onItems(items => {
       S.items = items;
       // on oublie les cartes « en partance » dès que Firestore a confirmé leur statut
@@ -853,6 +946,8 @@
     const emit = () => setTimeout(() => cb(items.map(i => ({ ...i }))), 0);
     return {
       onItems(f) { cb = f; emit(); },
+      onCats(f) { setTimeout(() => f(null), 0); },
+      async saveCats() {},
       async addItem(data, photo) { const id = 'n' + Date.now() + Math.random().toString(36).slice(2, 6); photos[id] = photo; items.push({ id, ...data }); emit(); return id; },
       async update(id, patch) { items = items.map(i => i.id === id ? { ...i, ...patch } : i); emit(); },
       async remove(id) { items = items.filter(i => i.id !== id); delete photos[id]; emit(); },
@@ -886,7 +981,7 @@
   } else {
     const { initializeApp } = await import('https://cdn.jsdelivr.net/npm/firebase@10.12.0/app/+esm');
     const {
-      initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, writeBatch, updateDoc, deleteDoc, getDoc
+      initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, setDoc, writeBatch, updateDoc, deleteDoc, getDoc
     } = await import('https://cdn.jsdelivr.net/npm/firebase@10.12.0/firestore/+esm');
 
     const app = initializeApp(firebaseConfig);
@@ -897,6 +992,11 @@
     // items/{id}  = { cat, nom, thumb, statut: ''|'quiero'|'tarde', valise, createdAt, decidedAt }
     // photos/{id} = { data }  (photo pleine taille, chargée à la demande)
     boot({
+      // config/categories = { list: [{ id, label, emoji, one }] } — absent = catégories par défaut
+      onCats(cb, err) {
+        return onSnapshot(doc(db, 'config', 'categories'), s => cb(s.exists() ? s.data().list : null), err);
+      },
+      saveCats(list) { return setDoc(doc(db, 'config', 'categories'), { list }); },
       onItems(cb, err) {
         return onSnapshot(collection(db, 'items'), s => cb(s.docs.map(d => ({ id: d.id, ...d.data() }))), err);
       },
