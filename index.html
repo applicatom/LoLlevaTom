@@ -274,7 +274,7 @@
         <label class="btn ghost file-btn">🖼️ Galerie<input type="file" accept="image/*" multiple onchange="addFiles(this)" /></label>
       </div>
       <div id="ad-pending" style="margin-top:10px"></div>
-      <p class="tip">💡 Mets le nom en espagnol : c'est ce qu'elle verra (« Pantalón negro », « Bolsa café »…). Laisse vide pour un nom auto.</p>
+      <p class="tip">💡 Pas besoin de nom : vide = numéro auto (« Playera 1 », « Bolsa 2 »…). Si tu en mets un, en espagnol.</p>
     </div>
     <button class="btn dark" id="ad-submit" style="width:100%" onclick="submitPending()" disabled>Ajouter</button>
   </div>
@@ -302,18 +302,18 @@
 <!-- ================= APP ================= -->
 <script>
   const CATS = [
-    { id: 'tops',       label: 'Tops',          emoji: '👚' },
-    { id: 'pantalones', label: 'Pantalones',    emoji: '👖' },
-    { id: 'vestidos',   label: 'Vestidos',      emoji: '👗' },
-    { id: 'abrigos',    label: 'Abrigos',       emoji: '🧥' },
-    { id: 'zapatos',    label: 'Zapatos',       emoji: '👠' },
-    { id: 'bolsas',     label: 'Bolsas',        emoji: '👜' },
-    { id: 'accesorios', label: 'Accesorios',    emoji: '💍' },
-    { id: 'interior',   label: 'Ropa interior', emoji: '🩲' },
-    { id: 'bano',       label: 'Ropa de baño',  emoji: '👙' },
-    { id: 'maquillaje', label: 'Maquillaje',    emoji: '💄' },
-    { id: 'objetos',    label: 'Objetos',       emoji: '🧸' },
-    { id: 'otros',      label: 'Otros',         emoji: '📦' },
+    { id: 'tops',       label: 'Tops',          emoji: '👚', one: 'Playera' },
+    { id: 'pantalones', label: 'Pantalones',    emoji: '👖', one: 'Pantalón' },
+    { id: 'vestidos',   label: 'Vestidos',      emoji: '👗', one: 'Vestido' },
+    { id: 'abrigos',    label: 'Abrigos',       emoji: '🧥', one: 'Abrigo' },
+    { id: 'zapatos',    label: 'Zapatos',       emoji: '👠', one: 'Zapatos' },
+    { id: 'bolsas',     label: 'Bolsas',        emoji: '👜', one: 'Bolsa' },
+    { id: 'accesorios', label: 'Accesorios',    emoji: '💍', one: 'Accesorio' },
+    { id: 'interior',   label: 'Ropa interior', emoji: '🩲', one: 'Ropa interior' },
+    { id: 'bano',       label: 'Ropa de baño',  emoji: '👙', one: 'Traje de baño' },
+    { id: 'maquillaje', label: 'Maquillaje',    emoji: '💄', one: 'Maquillaje' },
+    { id: 'objetos',    label: 'Objetos',       emoji: '🧸', one: 'Objeto' },
+    { id: 'otros',      label: 'Otros',         emoji: '📦', one: 'Cosa' },
   ];
   const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
   const LABEL = { quiero: '¡Lo quiero!', tarde: 'Más tarde', '': 'Por decidir' };
@@ -650,7 +650,7 @@
     if (box.dataset.key !== key) {
       box.dataset.key = key;
       box.innerHTML = S.pending.map(p => `<div class="pend" data-k="${p.key}"><img src="${p.preview}" alt="">
-        <input placeholder="Nom (en espagnol)" value="${esc(p.nom)}" oninput="pendName(${p.key}, this.value)">
+        <input placeholder="Nom (facultatif)" value="${esc(p.nom)}" oninput="pendName(${p.key}, this.value)">
         <button class="x" onclick="pendRemove(${p.key})">✕</button></div>`).join('');
     }
     const n = S.pending.length;
@@ -697,7 +697,9 @@
   async function submitPending() {
     if (!S.pending.length || S.uploading) return;
     const cat = S.adCat;
-    let n = inCat(cat).length;
+    // numéro suivant : on repart du plus grand « Playera N » existant (pas de doublon après une suppression)
+    const re = new RegExp('^' + CAT[cat].one + ' (\\d+)$');
+    let n = Math.max(0, ...inCat(cat).map(i => +(re.exec(i.nom) || [])[1] || 0));
     const todo = [...S.pending];
     let ok = 0;
     for (let k = 0; k < todo.length; k++) {
@@ -706,7 +708,7 @@
       renderPending();
       try {
         const [photo, thumb] = await Promise.all([compressImage(p.file, 1200, .72), compressImage(p.file, 360, .6)]);
-        const nom = p.nom.trim() || `${CAT[cat].label} ${++n}`;
+        const nom = p.nom.trim() || `${CAT[cat].one} ${++n}`;
         await B.addItem({ cat, nom, thumb, statut: '', valise: false, createdAt: Date.now() }, photo);
         URL.revokeObjectURL(p.preview);
         S.pending = S.pending.filter(x => x !== p);
