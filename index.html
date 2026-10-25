@@ -28,6 +28,8 @@
     --quiero-soft: #DDF5EA;
     --tarde: #EE9A00;
     --tarde-soft: #FFF0D1;
+    --fuera: #6E62A8;
+    --fuera-soft: #ECE8F8;
     --shadow: 0 10px 30px rgba(120, 50, 20, .12);
     --radius: 22px;
     --safe-top: env(safe-area-inset-top, 0px);
@@ -60,11 +62,11 @@
   .logo { font-family: 'Fredoka'; font-weight: 700; font-size: 38px; letter-spacing: -.5px; margin: 0; }
   .logo span { color: var(--rosa); }
   .hero p { margin: 4px 0 0; color: var(--muted); font-weight: 700; }
-  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0 14px; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 18px 0 14px; }
   .sum { background: var(--surface); border-radius: 18px; padding: 12px 6px; text-align: center; box-shadow: 0 2px 10px rgba(120,50,20,.06); }
   .sum b { display: block; font-family: 'Fredoka'; font-size: 26px; font-weight: 600; line-height: 1.1; }
   .sum small { color: var(--muted); font-weight: 700; font-size: 12.5px; }
-  .sum.q b { color: var(--quiero); } .sum.t b { color: var(--tarde); } .sum.p b { color: var(--rosa); }
+  .sum.q b { color: var(--quiero); } .sum.t b { color: var(--tarde); } .sum.f b { color: var(--fuera); } .sum.p b { color: var(--rosa); }
   .big-link { display: flex; align-items: center; gap: 12px; width: 100%; background: var(--ink); color: #fff; border-radius: 18px; padding: 14px 16px; font-weight: 800; margin-bottom: 18px; text-align: left; }
   .big-link .arrow { margin-left: auto; opacity: .7; }
   .section-title { font-family: 'Fredoka'; font-weight: 600; font-size: 19px; margin: 6px 2px 10px; }
@@ -103,11 +105,13 @@
   .stamp { position: absolute; top: 24px; padding: 6px 14px; border: 4px solid; border-radius: 12px; font-family: 'Fredoka'; font-weight: 700; font-size: 28px; opacity: 0; pointer-events: none; background: rgba(255,255,255,.85); }
   .stamp.quiero { left: 18px; color: var(--quiero); transform: rotate(-14deg); }
   .stamp.tarde { right: 18px; color: var(--tarde); transform: rotate(14deg); }
+  .stamp.fuera { left: 50%; top: auto; bottom: 90px; color: var(--fuera); transform: translateX(-50%); white-space: nowrap; }
   .actions { display: flex; justify-content: center; align-items: center; gap: 18px; padding-bottom: 4px; }
   .act { display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 800; font-size: 13px; }
   .act .circle { width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; background: var(--surface); box-shadow: var(--shadow); transition: transform .12s; }
   .act:active .circle { transform: scale(.9); }
-  .act.tarde { color: var(--tarde); } .act.quiero { color: var(--quiero); }
+  .act.tarde { color: var(--tarde); } .act.quiero { color: var(--quiero); } .act.fuera { color: var(--fuera); }
+  .act.fuera .circle { width: 58px; height: 58px; font-size: 25px; border: 3px solid var(--fuera-soft); }
   .act.tarde .circle { border: 3px solid var(--tarde-soft); } .act.quiero .circle { border: 3px solid var(--quiero-soft); }
   .act.undo .circle { width: 50px; height: 50px; font-size: 22px; }
   .act.undo { color: var(--muted); }
@@ -132,7 +136,9 @@
   .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); border-radius: 16px; padding: 4px; margin-bottom: 14px; }
   .seg button { padding: 10px 6px; border-radius: 12px; font-weight: 800; font-size: 14.5px; color: var(--muted); }
   .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgba(120,50,20,.1); }
-  .seg button.on.q { color: var(--quiero); } .seg button.on.t { color: var(--tarde); }
+  .seg button.on.q { color: var(--quiero); } .seg button.on.t { color: var(--tarde); } .seg button.on.f { color: var(--fuera); }
+  #ch-seg button { font-size: 13.5px; padding: 8px 2px; line-height: 1.25; }
+  #ch-seg button small { display: block; font-size: 15px; }
 
   /* ---------- grid ---------- */
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -153,14 +159,14 @@
   .sheet .sub { color: var(--muted); font-weight: 700; margin: 0 2px 14px; font-size: 14px; }
   .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .sheet-actions .btn { width: 100%; }
-  .btn.q { background: var(--quiero); } .btn.t { background: var(--tarde); }
+  .btn.q { background: var(--quiero); } .btn.t { background: var(--tarde); } .btn.f { background: var(--fuera); }
   .btn.sel { outline: 3px solid var(--ink); outline-offset: 2px; }
   .sheet-actions .wide { grid-column: 1 / -1; }
 
   /* ---------- toast ---------- */
   .toast { position: fixed; left: 50%; bottom: calc(var(--safe-bot) + 18px); transform: translate(-50%, 30px); opacity: 0; pointer-events: none; background: var(--ink); color: #fff; padding: 12px 12px 12px 16px; border-radius: 16px; font-weight: 700; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 32px); width: max-content; z-index: 80; transition: .25s; box-shadow: var(--shadow); }
   .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
-  .toast.q { background: var(--quiero); } .toast.t { background: #c97f00; }
+  .toast.q { background: var(--quiero); } .toast.t { background: #c97f00; } .toast.f { background: var(--fuera); }
   .toast .msg { flex: 1; min-width: 0; }
   .toast button { background: rgba(255,255,255,.22); padding: 7px 12px; border-radius: 10px; font-weight: 800; white-space: nowrap; }
   #p-swipe.show ~ .toast { bottom: auto; top: calc(var(--safe-top) + 64px); transform: translate(-50%, -30px); }
@@ -188,6 +194,7 @@
   .pill { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
   .pill.quiero { background: var(--quiero-soft); color: var(--quiero); }
   .pill.tarde { background: var(--tarde-soft); color: #a86c00; }
+  .pill.fuera { background: var(--fuera-soft); color: var(--fuera); }
   .mini { width: 38px; height: 38px; border-radius: 12px; background: var(--surface-2); flex: none; font-size: 16px; }
   .check { width: 30px; height: 30px; border-radius: 10px; border: 2.5px solid var(--line); display: grid; place-items: center; flex: none; font-weight: 800; color: #fff; }
   .check.on { background: var(--quiero); border-color: var(--quiero); }
@@ -218,6 +225,7 @@
     <div class="sum p"><b id="sum-p">0</b><small>Por decidir</small></div>
     <div class="sum q"><b id="sum-q">0</b><small>¡Lo quiero!</small></div>
     <div class="sum t"><b id="sum-t">0</b><small>Más tarde</small></div>
+    <div class="sum f"><b id="sum-f">0</b><small>Vender o tirar</small></div>
   </div>
   <button class="big-link" onclick="openChoices('all')">
     <span style="font-size:22px">📋</span><span>Mis elecciones</span><span class="arrow">›</span>
@@ -233,15 +241,16 @@
     <button class="icon-btn" onclick="goHome()" aria-label="Volver">←</button>
     <h2 id="sw-title"></h2>
     <span class="counter" id="sw-count"></span>
+    <button class="icon-btn" id="undo-btn" onclick="undo()" disabled aria-label="Deshacer">↶</button>
   </div>
-  <div class="hint" id="sw-hint">← Más tarde · ¡Lo quiero! →</div>
+  <div class="hint" id="sw-hint">← Más tarde · ↑ Vender o tirar · ¡Lo quiero! →</div>
   <div class="stack-wrap">
     <div class="stack" id="stack"></div>
     <div class="empty-state" id="sw-empty"></div>
   </div>
   <div class="actions" id="sw-actions">
     <button class="act tarde" onclick="decideTop('tarde')"><span class="circle">⏳</span>Más tarde</button>
-    <button class="act undo" id="undo-btn" onclick="undo()" disabled><span class="circle">↶</span>Deshacer</button>
+    <button class="act fuera" onclick="decideTop('fuera')"><span class="circle">👋</span>Vender o tirar</button>
     <button class="act quiero" onclick="decideTop('quiero')"><span class="circle">💚</span>¡Lo quiero!</button>
   </div>
 </div>
@@ -295,6 +304,7 @@
   <div id="ad-valise" style="display:none">
     <div class="panel" id="ad-valise-sum"></div>
     <div class="panel" id="ad-valise-list"></div>
+    <div class="panel" id="ad-fuera-list" style="display:none"></div>
   </div>
 
   <button class="link" onclick="quitAdmin()">Quitter le mode Tom</button>
@@ -330,7 +340,8 @@
     CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
   }
   setCats(null);
-  const LABEL = { quiero: '¡Lo quiero!', tarde: 'Más tarde', '': 'Por decidir' };
+  const LABEL = { quiero: '¡Lo quiero!', tarde: 'Más tarde', fuera: 'Vender o tirar', '': 'Por decidir' };
+  const KIND = { quiero: 'q', tarde: 't', fuera: 'f', '': '' };
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -378,11 +389,12 @@
 
   // ================= ACCUEIL =================
   function renderHome() {
-    const c = { '': 0, quiero: 0, tarde: 0 };
+    const c = { '': 0, quiero: 0, tarde: 0, fuera: 0 };
     S.items.forEach(i => c[statut(i)]++);
     $('sum-p').textContent = c[''];
     $('sum-q').textContent = c.quiero;
     $('sum-t').textContent = c.tarde;
+    $('sum-f').textContent = c.fuera;
     $('cats').innerHTML = CATS.map(cat => {
       const its = inCat(cat.id);
       const todo = its.filter(i => !statut(i)).length;
@@ -434,7 +446,7 @@
     const empty = $('sw-empty');
     const done = !q.length;
     empty.classList.toggle('show', done);
-    $('sw-actions').style.visibility = done && !S.history.length ? 'hidden' : '';
+    $('sw-actions').style.visibility = done ? 'hidden' : '';
     $('sw-hint').style.visibility = done ? 'hidden' : '';
     if (done) {
       empty.innerHTML = all.length
@@ -468,7 +480,7 @@
     c.className = 'card';
     c.dataset.id = it.id;
     c.innerHTML = `<div class="card-img"><img class="th" src="${it.thumb || ''}" alt=""><img class="full" alt=""></div>
-      <div class="stamp quiero">¡LO QUIERO!</div><div class="stamp tarde">MÁS TARDE</div>
+      <div class="stamp quiero">¡LO QUIERO!</div><div class="stamp tarde">MÁS TARDE</div><div class="stamp fuera">VENDER O TIRAR</div>
       <div class="card-name"><span class="nm"></span><small>${CAT[it.cat]?.emoji || ''} ${esc(CAT[it.cat]?.label || '')}</small></div>`;
     loadPhoto(it.id).then(src => {
       if (!src) return;
@@ -480,12 +492,16 @@
     return c;
   }
 
-  function setStamps(c, dx) {
-    const v = Math.min(Math.abs(dx) / 100, 1);
-    c._sq = c._sq || c.querySelector('.stamp.quiero');
-    c._st = c._st || c.querySelector('.stamp.tarde');
-    c._sq.style.opacity = dx > 0 ? v : 0;
-    c._st.style.opacity = dx < 0 ? v : 0;
+  // direction du swipe : droite = quiero, gauche = tarde, haut = fuera
+  function swipeDir(dx, dy) {
+    if (-dy > Math.abs(dx) && -dy > 20) return 'fuera';
+    return dx > 0 ? 'quiero' : dx < 0 ? 'tarde' : '';
+  }
+  function setStamps(c, dx, dy = 0) {
+    const d = swipeDir(dx, dy);
+    const v = Math.min(Math.max(Math.abs(dx), d === 'fuera' ? -dy : 0) / 100, 1);
+    c._s = c._s || { quiero: c.querySelector('.stamp.quiero'), tarde: c.querySelector('.stamp.tarde'), fuera: c.querySelector('.stamp.fuera') };
+    for (const k in c._s) c._s[k].style.opacity = k === d ? v : 0;
   }
 
   function attachDrag(c) {
@@ -503,17 +519,20 @@
       raf = requestAnimationFrame(() => {
         raf = 0;
         if (!on) return;
-        c.style.transform = `translate(${dx}px, ${dy * .4}px) rotate(${dx / 16}deg)`;
-        setStamps(c, dx);
+        const up = dy < 0 ? dy * .8 : dy * .4;
+        c.style.transform = `translate(${dx}px, ${up}px) rotate(${dx / 16}deg)`;
+        setStamps(c, dx, dy);
       });
     });
     const end = () => {
       if (!on) return;
       on = false; S.dragging = false;
-      const v = Math.abs(dx) / Math.max(Date.now() - t0, 1);
+      const dt = Math.max(Date.now() - t0, 1);
+      const dir = swipeDir(dx, dy);
+      const dist = dir === 'fuera' ? -dy : Math.abs(dx);
       c.style.transition = '';
-      if (Math.abs(dx) > 110 || (Math.abs(dx) > 45 && v > .6)) {
-        decide(c, dx > 0 ? 'quiero' : 'tarde', dy * .4);
+      if (dir && (dist > 110 || (dist > 45 && dist / dt > .6))) {
+        decide(c, dir, dy * .4);
       } else {
         c.style.transform = '';
         setStamps(c, 0);
@@ -526,7 +545,7 @@
 
   function decideTop(st) {
     const c = $('stack').querySelector('.card[data-depth="0"]:not(.gone)');
-    if (c) { setStamps(c, st === 'quiero' ? 100 : -100); decide(c, st, 0); }
+    if (c) { st === 'fuera' ? setStamps(c, 0, -100) : setStamps(c, st === 'quiero' ? 100 : -100); decide(c, st, 0); }
   }
 
   function decide(c, st, dy) {
@@ -536,7 +555,9 @@
     c.classList.add('gone');
     const dir = st === 'quiero' ? 1 : -1;
     c.style.transition = 'transform .35s ease-in, opacity .35s';
-    c.style.transform = `translate(${dir * window.innerWidth * 1.3}px, ${dy}px) rotate(${dir * 28}deg)`;
+    c.style.transform = st === 'fuera'
+      ? `translate(0, ${-window.innerHeight * 1.2}px) scale(.9)`
+      : `translate(${dir * window.innerWidth * 1.3}px, ${dy}px) rotate(${dir * 28}deg)`;
     c.style.opacity = '0';
     setTimeout(() => c.remove(), 380);
     if (navigator.vibrate) navigator.vibrate(12);
@@ -545,7 +566,7 @@
     if (S.front === id) S.front = null;
     S.history.push({ id, prev: statut(it) });
     setStatut(it, st);
-    toast(`${CAT[it.cat]?.emoji || ''} ${it.nom} → ${LABEL[st]}`, { kind: st === 'quiero' ? 'q' : 't', action: 'Deshacer', onAction: undo });
+    toast(`${CAT[it.cat]?.emoji || ''} ${it.nom} → ${LABEL[st]}`, { kind: KIND[st], action: 'Deshacer', onAction: undo });
     renderSwipe();
   }
 
@@ -553,6 +574,7 @@
     it.statut = st; // le snapshot confirmera
     const patch = { statut: st, decidedAt: Date.now() };
     if (st !== 'quiero') patch.valise = false;
+    if (st !== 'fuera') patch.fait = false;
     B.update(it.id, patch).catch(e => toast('❌ ' + e.message));
   }
 
@@ -587,12 +609,12 @@
     $('ch-chips').innerHTML = [`<button class="chip ${S.chCat === 'all' ? 'on' : ''}" onclick="S.chCat='all';renderChoices()">Todas</button>`]
       .concat(cats.map(c => `<button class="chip ${S.chCat === c.id ? 'on' : ''}" onclick="S.chCat='${c.id}';renderChoices()">${c.emoji} ${esc(c.label)}</button>`)).join('');
     const pool = S.chCat === 'all' ? decided : decided.filter(i => i.cat === S.chCat);
-    const nQ = pool.filter(i => i.statut === 'quiero').length, nT = pool.length - nQ;
-    $('ch-seg').innerHTML = `<button class="q ${S.chTab === 'quiero' ? 'on' : ''}" onclick="S.chTab='quiero';renderChoices()">💚 Lo quiero (${nQ})</button>
-      <button class="t ${S.chTab === 'tarde' ? 'on' : ''}" onclick="S.chTab='tarde';renderChoices()">⏳ Más tarde (${nT})</button>`;
+    const n = st => pool.filter(i => i.statut === st).length;
+    $('ch-seg').innerHTML = [['quiero', 'q', '💚 Lo quiero'], ['tarde', 't', '⏳ Más tarde'], ['fuera', 'f', '👋 Vender/tirar']]
+      .map(([st, k, lb]) => `<button class="${k} ${S.chTab === st ? 'on' : ''}" onclick="S.chTab='${st}';renderChoices()">${lb}<small>${n(st)}</small></button>`).join('');
     const list = pool.filter(i => i.statut === S.chTab).sort((a, b) => CATS.indexOf(CAT[a.cat]) - CATS.indexOf(CAT[b.cat]) || byDate(a, b));
     $('ch-grid').innerHTML = list.length ? list.map(tileHTML).join('')
-      : `<div class="none" style="grid-column:1/-1">${S.chTab === 'quiero' ? 'Nada todavía 💚' : 'Nada para más tarde ⏳'}</div>`;
+      : `<div class="none" style="grid-column:1/-1">${{ quiero: 'Nada todavía 💚', tarde: 'Nada para más tarde ⏳', fuera: 'Nada para vender o tirar 👋' }[S.chTab]}</div>`;
   }
 
   function tileHTML(i) {
@@ -614,6 +636,7 @@
       <div class="sheet-actions">
         <button class="btn q ${st === 'quiero' ? 'sel' : ''}" onclick="changeStatut('${id}','quiero')">💚 ¡Lo quiero!</button>
         <button class="btn t ${st === 'tarde' ? 'sel' : ''}" onclick="changeStatut('${id}','tarde')">⏳ Más tarde</button>
+        <button class="btn f wide ${st === 'fuera' ? 'sel' : ''}" onclick="changeStatut('${id}','fuera')">👋 Vender o tirar</button>
         ${st ? `<button class="btn ghost wide" onclick="changeStatut('${id}','')">↺ Volver a decidir</button>` : ''}
         <button class="btn ghost wide" onclick="closeSheet()">Cerrar</button>
       </div>`;
@@ -628,7 +651,7 @@
     if (statut(it) !== st) {
       S.history.push({ id, prev: statut(it) });
       setStatut(it, st);
-      toast(`${it.nom} → ${LABEL[st]}`, { kind: st === 'quiero' ? 'q' : st === 'tarde' ? 't' : '', action: 'Deshacer', onAction: undo });
+      toast(`${it.nom} → ${LABEL[st]}`, { kind: KIND[st], action: 'Deshacer', onAction: undo });
     }
     closeSheet();
     render();
@@ -862,7 +885,7 @@
     $('ad-items-chips').innerHTML = [`<button class="chip ${S.adItemsCat === 'all' ? 'on' : ''}" onclick="S.adItemsCat='all';renderItems()">Tout (${S.items.length})</button>`]
       .concat(cats.map(c => `<button class="chip ${S.adItemsCat === c.id ? 'on' : ''}" onclick="S.adItemsCat='${c.id}';renderItems()">${c.emoji} ${esc(c.label)} (${inCat(c.id).length})</button>`)).join('');
     const list = (S.adItemsCat === 'all' ? S.items : inCat(S.adItemsCat)).slice().sort((a, b) => CATS.indexOf(CAT[a.cat]) - CATS.indexOf(CAT[b.cat]) || byDate(b, a));
-    const frSt = { quiero: 'Elle le veut', tarde: 'Plus tard', '': 'Pas trié' };
+    const frSt = { quiero: 'Elle le veut', tarde: 'Plus tard', fuera: 'Vendre/jeter', '': 'Pas trié' };
     $('ad-items-list').innerHTML = list.length ? list.map(i => `<div class="row">
         <div class="im" style="background-image:url('${i.thumb || ''}')"></div>
         <div class="tx"><b>${esc(i.nom)}</b><small>${CAT[i.cat]?.emoji || ''} ${esc(CAT[i.cat]?.label || i.cat)} · <span class="pill ${statut(i)}">${frSt[statut(i)]}</span></small></div>
@@ -894,9 +917,11 @@
     const packed = q.filter(i => i.valise).length;
     const tarde = S.items.filter(i => i.statut === 'tarde').length;
     const todo = S.items.filter(i => !statut(i)).length;
+    const fuera = S.items.filter(i => i.statut === 'fuera');
     $('ad-valise-sum').innerHTML = `<h4>🧳 ${packed} / ${q.length} dans la valise</h4>
       <div class="progress"><i style="width:${q.length ? packed / q.length * 100 : 0}%"></i></div>
-      <p class="tip" style="margin-top:8px">⏳ ${tarde} pour plus tard · ❔ ${todo} pas encore trié${todo > 1 ? 's' : ''}</p>`;
+      <p class="tip" style="margin-top:8px">⏳ ${tarde} pour plus tard · 👋 ${fuera.length} à vendre/jeter · ❔ ${todo} pas encore trié${todo > 1 ? 's' : ''}</p>
+      ${tarde ? `<button class="btn ghost" style="width:100%;margin-top:10px" onclick="resubmitTarde()">↺ Lui refaire trier les ${tarde} « Plus tard »</button>` : ''}`;
     const groups = CATS.map(c => ({ c, its: q.filter(i => i.cat === c.id).sort(byDate) })).filter(g => g.its.length);
     $('ad-valise-list').innerHTML = groups.length ? groups.map(g => `<div class="grp">${g.c.emoji} ${esc(g.c.label)} <span class="pill">${g.its.filter(i => i.valise).length}/${g.its.length}</span></div>` +
       g.its.map(i => `<div class="row ${i.valise ? 'packed' : ''}" onclick="togglePacked('${i.id}')" style="cursor:pointer">
@@ -904,13 +929,29 @@
         <div class="im" style="background-image:url('${i.thumb || ''}')"></div>
         <div class="tx"><b>${esc(i.nom)}</b></div></div>`).join('')).join('')
       : '<div class="none">Elle n\'a encore rien mis en « ¡Lo quiero! » 💚</div>';
+    const fg = CATS.map(c => ({ c, its: fuera.filter(i => i.cat === c.id).sort(byDate) })).filter(g => g.its.length);
+    $('ad-fuera-list').style.display = fuera.length ? '' : 'none';
+    $('ad-fuera-list').innerHTML = `<h4>👋 À vendre ou jeter <span class="pill fuera">${fuera.filter(i => i.fait).length}/${fuera.length} fait${fuera.length > 1 ? 's' : ''}</span></h4>` +
+      fg.map(g => `<div class="grp">${g.c.emoji} ${esc(g.c.label)}</div>` +
+        g.its.map(i => `<div class="row ${i.fait ? 'packed' : ''}" onclick="toggleField('${i.id}','fait')" style="cursor:pointer">
+          <span class="check ${i.fait ? 'on' : ''}">${i.fait ? '✓' : ''}</span>
+          <div class="im" style="background-image:url('${i.thumb || ''}')"></div>
+          <div class="tx"><b>${esc(i.nom)}</b></div></div>`).join('')).join('');
   }
-  function togglePacked(id) {
+  function toggleField(id, f) {
     const it = S.items.find(i => i.id === id);
-    it.valise = !it.valise;
+    it[f] = !it[f];
     renderValise();
-    B.update(id, { valise: it.valise }).catch(e => toast('❌ ' + e.message));
+    B.update(id, { [f]: it[f] }).catch(e => toast('❌ ' + e.message));
   }
+  function resubmitTarde() {
+    const list = S.items.filter(i => i.statut === 'tarde');
+    if (!list.length || !confirm(`Remettre ses ${list.length} « Más tarde » à trier ? Ils réapparaîtront dans ses cartes.`)) return;
+    list.forEach(it => { it.statut = ''; B.update(it.id, { statut: '' }).catch(e => toast('❌ ' + e.message)); });
+    render();
+    toast(`↺ ${list.length} objet${list.length > 1 ? 's' : ''} à re-trier`);
+  }
+  function togglePacked(id) { toggleField(id, 'valise'); }
 
   // ================= DÉMARRAGE =================
   function boot(backend, demo) {
@@ -989,7 +1030,7 @@
     try { db = initializeFirestore(app, { localCache: persistentLocalCache() }); }
     catch (e) { db = initializeFirestore(app, {}); }
 
-    // items/{id}  = { cat, nom, thumb, statut: ''|'quiero'|'tarde', valise, createdAt, decidedAt }
+    // items/{id}  = { cat, nom, thumb, statut: ''|'quiero'|'tarde'|'fuera', valise, fait, createdAt, decidedAt }
     // photos/{id} = { data }  (photo pleine taille, chargée à la demande)
     boot({
       // config/categories = { list: [{ id, label, emoji, one }] } — absent = catégories par défaut

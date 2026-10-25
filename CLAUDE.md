@@ -9,7 +9,7 @@ swipe les affaires restées en France ; Thomas les ramène en décembre.
   est remplie, sinon `demoBackend()` en mémoire.
 - Modèle : `items/{id}` (métadonnées + `thumb` ~360 px) et `photos/{id}` (photo pleine, lazy).
   Photos compressées en JPEG côté client (`compressImage`) — doc Firestore max 1 Mo.
-- Catégories : `DEFAULT_CATS` en dur, liste réelle dans Firestore `config/categories` (`{ list: [{id,label,emoji,one}] }`), éditable en mode Tom (« ＋ Nouvelle » / « ✏️ Gérer »). Suppression bloquée si la catégorie contient des objets. Statuts : `''`, `'quiero'`, `'tarde'` ; `valise` = coché dans la valise.
+- Catégories : `DEFAULT_CATS` en dur, liste réelle dans Firestore `config/categories` (`{ list: [{id,label,emoji,one}] }`), éditable en mode Tom (« ＋ Nouvelle » / « ✏️ Gérer »). Suppression bloquée si la catégorie contient des objets. Statuts : `''`, `'quiero'` (swipe droite), `'tarde'` (gauche), `'fuera'` = vender o tirar (haut) ; `valise` = coché dans la valise, `fait` = vendu/jeté. Mode Tom → Valise : bouton pour remettre tous les `tarde` à `''`.
 - Swipe : `renderStack` réconcilie les cartes par id (ne casse pas un drag en cours), `S.leaving`
   masque une carte avant la confirmation Firestore, `S.history` + `undo()` pour « Deshacer ».
 - Mode Tom : `?tom` dans l'URL ou 5 tapes sur le logo (`localStorage.llt_admin`).
