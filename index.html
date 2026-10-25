@@ -154,7 +154,15 @@
   .sheet { background: var(--bg); width: 100%; max-width: 560px; border-radius: 26px 26px 0 0; padding: 14px 16px calc(var(--safe-bot) + 18px); max-height: 92dvh; overflow-y: auto; animation: up .22s ease-out; }
   @keyframes up { from { transform: translateY(40px); opacity: 0; } }
   .sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 12px; }
-  .sheet .ph { width: 100%; aspect-ratio: 4/5; max-height: 52dvh; border-radius: 20px; background: var(--surface-2) center/contain no-repeat; }
+  .sheet .ph { width: 100%; aspect-ratio: 4/5; max-height: 52dvh; border-radius: 20px; background: var(--surface-2) center/contain no-repeat; cursor: zoom-in; }
+  .sheet .ph.big { max-height: 62dvh; }
+  .viewer { position: fixed; inset: 0; z-index: 90; background: #000; display: none; align-items: center; justify-content: center; }
+  .viewer.show { display: flex; }
+  .viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .viewer .cap { position: absolute; left: 0; right: 0; bottom: calc(var(--safe-bot) + 18px); text-align: center; color: #fff; font-family: 'Fredoka'; font-weight: 600; font-size: 20px; text-shadow: 0 1px 6px #000; }
+  .viewer .x { position: absolute; top: calc(var(--safe-top) + 12px); right: 16px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.2); color: #fff; font-size: 18px; }
+  .row .tap { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; }
+  .row .tap .im { width: 64px; height: 64px; }
   .sheet h3 { margin: 12px 2px 2px; font-size: 22px; font-weight: 600; }
   .sheet .sub { color: var(--muted); font-weight: 700; margin: 0 2px 14px; font-size: 14px; }
   .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -314,6 +322,8 @@
 <div class="overlay" id="overlay" onclick="if(event.target===this) closeSheet()">
   <div class="sheet" id="sheet"></div>
 </div>
+
+<div class="viewer" id="viewer" onclick="closeViewer()"><img alt=""><div class="cap"></div><button class="x" aria-label="Cerrar">✕</button></div>
 
 <div class="toast" id="toast"><span class="msg" id="toast-msg"></span><button id="toast-btn" style="display:none"></button></div>
 
@@ -630,7 +640,7 @@
     if (!it) return;
     const st = statut(it);
     $('sheet').innerHTML = `<div class="grab"></div>
-      <div class="ph" id="sheet-ph" style="background-image:url('${it.thumb || ''}')"></div>
+      <div class="ph" id="sheet-ph" style="background-image:url('${it.thumb || ''}')" onclick="openViewer('${id}')"></div>
       <h3>${esc(it.nom)}</h3>
       <p class="sub">${CAT[it.cat]?.emoji || ''} ${esc(CAT[it.cat]?.label || '')} · ${LABEL[st]}${it.valise ? ' · 🧳 ya en la maleta' : ''}</p>
       <div class="sheet-actions">
@@ -645,6 +655,37 @@
     loadPhoto(id).then(src => { const ph = $('sheet-ph'); if (src && ph) ph.style.backgroundImage = `url('${src}')`; });
   }
   function closeSheet() { $('overlay').classList.remove('show'); }
+
+  function openPhoto(id) {
+    const it = S.items.find(i => i.id === id);
+    if (!it) return;
+    const st = statut(it);
+    const frSt = { quiero: '💚 Elle le veut', tarde: '⏳ Plus tard', fuera: '👋 À vendre ou jeter', '': '❔ Pas encore trié' };
+    const btn = st === 'quiero'
+      ? `<button class="btn ${it.valise ? 'q' : 'dark'} wide" onclick="togglePacked('${id}');openPhoto('${id}')">${it.valise ? '✓ Dans la valise' : '🧳 Mettre dans la valise'}</button>`
+      : st === 'fuera'
+      ? `<button class="btn ${it.fait ? 'q' : 'f'} wide" onclick="toggleField('${id}','fait');openPhoto('${id}')">${it.fait ? '✓ Vendu / jeté' : '👋 Marquer vendu / jeté'}</button>` : '';
+    $('sheet').innerHTML = `<div class="grab"></div>
+      <div class="ph big" id="sheet-ph" style="background-image:url('${photoCacheSrc(id) || it.thumb || ''}')" onclick="openViewer('${id}')"></div>
+      <h3>${esc(it.nom)}</h3>
+      <p class="sub">${CAT[it.cat]?.emoji || ''} ${esc(CAT[it.cat]?.label || '')} · ${frSt[st]} · <span style="text-decoration:underline">toucher la photo pour le plein écran</span></p>
+      <div class="sheet-actions">${btn}<button class="btn ghost wide" onclick="closeSheet()">Fermer</button></div>`;
+    $('overlay').classList.add('show');
+    loadPhoto(id).then(src => { photoSrc[id] = src; const ph = $('sheet-ph'); if (src && ph) ph.style.backgroundImage = `url('${src}')`; });
+  }
+
+  // plein écran (Tom et elle) : on touche n'importe où pour fermer
+  const photoSrc = {};
+  const photoCacheSrc = id => photoSrc[id];
+  function openViewer(id) {
+    const it = S.items.find(i => i.id === id);
+    const v = $('viewer');
+    v.querySelector('img').src = photoSrc[id] || it?.thumb || '';
+    v.querySelector('.cap').textContent = it?.nom || '';
+    v.classList.add('show');
+    loadPhoto(id).then(src => { if (src) { photoSrc[id] = src; v.querySelector('img').src = src; } });
+  }
+  function closeViewer() { $('viewer').classList.remove('show'); }
   function changeStatut(id, st) {
     const it = S.items.find(i => i.id === id);
     if (!it) return;
@@ -887,7 +928,7 @@
     const list = (S.adItemsCat === 'all' ? S.items : inCat(S.adItemsCat)).slice().sort((a, b) => CATS.indexOf(CAT[a.cat]) - CATS.indexOf(CAT[b.cat]) || byDate(b, a));
     const frSt = { quiero: 'Elle le veut', tarde: 'Plus tard', fuera: 'Vendre/jeter', '': 'Pas trié' };
     $('ad-items-list').innerHTML = list.length ? list.map(i => `<div class="row">
-        <div class="im" style="background-image:url('${i.thumb || ''}')"></div>
+        <div class="im" style="background-image:url('${i.thumb || ''}');cursor:pointer" onclick="openPhoto('${i.id}')"></div>
         <div class="tx"><b>${esc(i.nom)}</b><small>${CAT[i.cat]?.emoji || ''} ${esc(CAT[i.cat]?.label || i.cat)} · <span class="pill ${statut(i)}">${frSt[statut(i)]}</span></small></div>
         <button class="mini" onclick="renameItem('${i.id}')" aria-label="Renommer">✏️</button>
         <button class="mini" onclick="moveItem('${i.id}')" aria-label="Changer de catégorie">🔀</button>
@@ -924,19 +965,19 @@
       ${tarde ? `<button class="btn ghost" style="width:100%;margin-top:10px" onclick="resubmitTarde()">↺ Lui refaire trier les ${tarde} « Plus tard »</button>` : ''}`;
     const groups = CATS.map(c => ({ c, its: q.filter(i => i.cat === c.id).sort(byDate) })).filter(g => g.its.length);
     $('ad-valise-list').innerHTML = groups.length ? groups.map(g => `<div class="grp">${g.c.emoji} ${esc(g.c.label)} <span class="pill">${g.its.filter(i => i.valise).length}/${g.its.length}</span></div>` +
-      g.its.map(i => `<div class="row ${i.valise ? 'packed' : ''}" onclick="togglePacked('${i.id}')" style="cursor:pointer">
-        <span class="check ${i.valise ? 'on' : ''}">${i.valise ? '✓' : ''}</span>
-        <div class="im" style="background-image:url('${i.thumb || ''}')"></div>
-        <div class="tx"><b>${esc(i.nom)}</b></div></div>`).join('')).join('')
+      g.its.map(i => `<div class="row ${i.valise ? 'packed' : ''}">
+        <button class="check ${i.valise ? 'on' : ''}" onclick="togglePacked('${i.id}')" aria-label="Dans la valise">${i.valise ? '✓' : ''}</button>
+        <div class="tap" onclick="openPhoto('${i.id}')"><div class="im" style="background-image:url('${i.thumb || ''}')"></div>
+        <div class="tx"><b>${esc(i.nom)}</b><small>Toucher pour voir en grand</small></div></div></div>`).join('')).join('')
       : '<div class="none">Elle n\'a encore rien mis en « ¡Lo quiero! » 💚</div>';
     const fg = CATS.map(c => ({ c, its: fuera.filter(i => i.cat === c.id).sort(byDate) })).filter(g => g.its.length);
     $('ad-fuera-list').style.display = fuera.length ? '' : 'none';
     $('ad-fuera-list').innerHTML = `<h4>👋 À vendre ou jeter <span class="pill fuera">${fuera.filter(i => i.fait).length}/${fuera.length} fait${fuera.length > 1 ? 's' : ''}</span></h4>` +
       fg.map(g => `<div class="grp">${g.c.emoji} ${esc(g.c.label)}</div>` +
-        g.its.map(i => `<div class="row ${i.fait ? 'packed' : ''}" onclick="toggleField('${i.id}','fait')" style="cursor:pointer">
-          <span class="check ${i.fait ? 'on' : ''}">${i.fait ? '✓' : ''}</span>
-          <div class="im" style="background-image:url('${i.thumb || ''}')"></div>
-          <div class="tx"><b>${esc(i.nom)}</b></div></div>`).join('')).join('');
+        g.its.map(i => `<div class="row ${i.fait ? 'packed' : ''}">
+          <button class="check ${i.fait ? 'on' : ''}" onclick="toggleField('${i.id}','fait')" aria-label="Fait">${i.fait ? '✓' : ''}</button>
+          <div class="tap" onclick="openPhoto('${i.id}')"><div class="im" style="background-image:url('${i.thumb || ''}')"></div>
+          <div class="tx"><b>${esc(i.nom)}</b><small>Toucher pour voir en grand</small></div></div></div>`).join('')).join('');
   }
   function toggleField(id, f) {
     const it = S.items.find(i => i.id === id);
